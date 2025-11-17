@@ -4,12 +4,19 @@ import { InfoSection } from '@/components/home/InfoSection'
 import { FAQSection } from '@/components/home/FAQSection'
 import { generateWebsiteSchema, generateOrganizationSchema } from '@/lib/schema-generator'
 
+export const dynamic = 'force-dynamic'
+
 export default async function Home() {
   // Fetch all active dentists for homepage directory
-  const dentists = await prisma.dentistDirectory.findMany({
-    where: { isActive: true },
-    orderBy: { rating: 'desc' }
-  })
+  let dentists = []
+  try {
+    dentists = await prisma.dentistDirectory.findMany({
+      where: { isActive: true },
+      orderBy: { rating: 'desc' }
+    })
+  } catch (error) {
+    console.error('Database not ready:', error)
+  }
 
   const websiteSchema = generateWebsiteSchema()
   const organizationSchema = generateOrganizationSchema()
