@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useParams } from 'next/navigation'
 import { AdminWrapper } from '@/components/admin/AdminWrapper'
 import { ReviewForm } from '@/components/admin/reviews/ReviewForm'

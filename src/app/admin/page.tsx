@@ -1,3 +1,7 @@
+'use client'
+
+export const dynamic = 'force-dynamic'
+
 import { DocumentIcon } from '@heroicons/react/24/solid'
 import Link from 'next/link'
 import {

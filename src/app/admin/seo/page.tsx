@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useMemo, useState } from 'react'
 import { AdminWrapper } from '@/components/admin/AdminWrapper'
 import { SeoSettingsManager } from '@/components/admin/seo/SeoSettingsManager'
