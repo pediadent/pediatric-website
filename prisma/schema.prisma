@@ -1,0 +1,349 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      Role     @default(AUTHOR)
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  articles  Article[]
+  reviews   Review[]
+  resetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  seoTitle    String?
+  seoDescription String?
+  featuredImage String?
+  isNoIndex   Boolean  @default(false)
+  isNoFollow  Boolean  @default(false)
+  schema      String?  // JSON string for custom schema
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  articles    Article[]
+  reviews     Review[]
+
+  @@map("categories")
+}
+
+model Author {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  bio         String?
+  email       String?
+  website     String?
+  avatar      String?
+  seoTitle    String?
+  seoDescription String?
+  featuredImage String?
+  isNoIndex   Boolean  @default(false)
+  isNoFollow  Boolean  @default(false)
+  schema      String?  // JSON string for custom schema
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  articles    Article[]
+  reviews     Review[]
+
+  @@map("authors")
+}
+
+model Article {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  content     String      // Rich text content
+  excerpt     String?
+  featuredImage String?
+  status      ContentStatus @default(DRAFT)
+  type        ContentType @default(BLOG)
+  seoTitle    String?
+  seoDescription String?
+  isNoIndex   Boolean     @default(false)
+  isNoFollow  Boolean     @default(false)
+  schema      String?     // JSON string for custom schema
+  faqs        String?     // JSON array of FAQ entries
+  faqHeading  String?
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  authorId    String
+  author      Author      @relation(fields: [authorId], references: [id])
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@map("articles")
+}
+
+model Review {
+  id          String      @id @default(cuid())
+  title       String
+  slug        String      @unique
+  content     String      // Rich text content
+  excerpt     String?
+  featuredImage String?
+  rating      Float?      // 1-5 rating
+  pros        String?     // JSON array of pros
+  cons        String?     // JSON array of cons
+  affiliateLinks String?  // JSON array of affiliate links
+  faqs        String?     // JSON array of FAQ entries
+  faqHeading  String?
+  status      ContentStatus @default(DRAFT)
+  seoTitle    String?
+  seoDescription String?
+  isNoIndex   Boolean     @default(false)
+  isNoFollow  Boolean     @default(false)
+  schema      String?     // JSON string for custom schema
+  publishedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  authorId    String
+  author      Author      @relation(fields: [authorId], references: [id])
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  primaryReviewerId String?
+  primaryReviewer   Reviewer? @relation("PrimaryReviewer", fields: [primaryReviewerId], references: [id])
+  reviewers         ReviewReviewer[]
+
+  @@map("reviews")
+}
+
+model ReviewReviewer {
+  reviewId String
+  reviewerId String
+  assignedAt DateTime @default(now())
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewer Reviewer @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@id([reviewId, reviewerId])
+  @@map("review_reviewers")
+}
+
+model Reviewer {
+  id             String   @id @default(cuid())
+  name           String
+  slug           String   @unique
+  title          String?
+  credentials    String?
+  bio            String?
+  description    String?
+  email          String?
+  website        String?
+  avatar         String?
+  seoTitle       String?
+  seoDescription String?
+  featuredImage  String?
+  isNoIndex      Boolean  @default(false)
+  isNoFollow     Boolean  @default(false)
+  schema         String?  // JSON string for custom schema
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  primaryReviews   Review[]         @relation("PrimaryReviewer")
+  reviewAssignments ReviewReviewer[]
+
+  @@map("reviewers")
+}
+
+model DentistDirectory {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  about       String?  // About section content
+  description String?
+  address     String?
+  phone       String?
+  website     String?
+  email       String?
+  rating      Float?
+  reviewCount Int?     // Number of reviews
+  image       String?
+  logo        String?  // Logo image URL
+  gallery     String?  // JSON array of gallery image URLs
+  services    String?  // JSON array of services
+  workingHours String? // JSON object for working hours
+  insurances  String?  // Dental insurances accepted text
+  gmapLink    String?  // Google Maps/GMB link (format: https://www.google.com/maps/search/?api=1&query=lat,lng)
+  directionsUrl String? // Direct URL for "Get Directions" button
+  embeddedMap String?  // Embedded Google Maps iframe HTML
+  seoTitle    String?
+  seoDescription String?
+  isNoIndex   Boolean  @default(false)
+  isNoFollow  Boolean  @default(false)
+  schema      String?  // JSON string for custom schema
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("dentist_directory")
+}
+
+model Media {
+  id        String   @id @default(cuid())
+  filename  String
+  originalName String
+  mimeType  String
+  size      Int
+  path      String
+  alt       String?
+  caption   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("media")
+}
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  usedAt     DateTime?
+
+  @@map("password_reset_tokens")
+}
+
+model ClinicSubmission {
+  id              String           @id @default(cuid())
+  name            String
+  contactName     String?
+  email           String
+  phone           String?
+  website         String?
+  address         String?
+  city            String?
+  state           String?
+  postalCode      String?
+  description     String?
+  services        String?
+  officeHours     String?
+  insurances      String?
+  googleMapLink   String?
+  directionsUrl   String?
+  logoUrl         String?
+  heroImageUrl    String?
+  galleryUrls     String?
+  additionalInfo  String?
+  submittedFromIp String?
+  status          SubmissionStatus @default(PENDING)
+  createdAt       DateTime         @default(now())
+  reviewedAt      DateTime?
+
+  @@map("clinic_submissions")
+}
+
+model Redirect {
+  id        String      @id @default(cuid())
+  fromPath  String      @unique
+  toPath    String
+  type      RedirectType @default(PERMANENT)
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("redirects")
+}
+
+model AnalyticsSnippet {
+  id          String             @id @default(cuid())
+  name        String
+  provider    AnalyticsProvider  @default(OTHER)
+  description String?
+  code        String
+  isEnabled   Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@map("analytics_snippets")
+}
+
+model SeoSettings {
+  id          String   @id @default(cuid())
+  path        String   @unique
+  title       String?
+  description String?
+  ogTitle     String?
+  ogDescription String?
+  ogImage     String?
+  twitterTitle String?
+  twitterDescription String?
+  twitterImage String?
+  schema      String?  // JSON string for custom schema
+  canonical   String?
+  robots      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("seo_settings")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  AUTHOR
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ContentType {
+  BLOG
+  DIRECTORY
+  TOOL
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RedirectType {
+  TEMPORARY
+  PERMANENT
+}
+
+enum AnalyticsProvider {
+  GOOGLE_ANALYTICS
+  GOOGLE_TAG_MANAGER
+  SEARCH_CONSOLE
+  FACEBOOK_PIXEL
+  LINKEDIN_INSIGHT
+  TIKTOK_PIXEL
+  OTHER
+}
+
+
