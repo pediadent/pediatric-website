@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 
 import { prisma } from '@/lib/prisma'
 
+export const dynamic = 'force-dynamic'
+
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ||
   process.env.SITE_URL?.replace(/\/$/, '') ||
@@ -24,20 +26,28 @@ const staticRoutes: StaticRoute[] = [
 ]
 
 export async function GET() {
-  const [articles, reviews, dentists] = await Promise.all([
-    prisma.article.findMany({
-      where: { status: 'PUBLISHED' },
-      select: { slug: true, updatedAt: true }
-    }),
-    prisma.review.findMany({
-      where: { status: 'PUBLISHED' },
-      select: { slug: true, updatedAt: true }
-    }),
-    prisma.dentistDirectory.findMany({
-      where: { isActive: true },
-      select: { slug: true, updatedAt: true }
-    })
-  ])
+  let articles = []
+  let reviews = []
+  let dentists = []
+
+  try {
+    [articles, reviews, dentists] = await Promise.all([
+      prisma.article.findMany({
+        where: { status: 'PUBLISHED' },
+        select: { slug: true, updatedAt: true }
+      }),
+      prisma.review.findMany({
+        where: { status: 'PUBLISHED' },
+        select: { slug: true, updatedAt: true }
+      }),
+      prisma.dentistDirectory.findMany({
+        where: { isActive: true },
+        select: { slug: true, updatedAt: true }
+      })
+    ])
+  } catch (error) {
+    console.error('Database not ready, returning static sitemap only:', error)
+  }
 
   const urls: Array<{ loc: string; lastmod?: string; priority: number }> = []
 
