@@ -280,7 +280,7 @@ export async function ArticlePageContent({ article }: { article: ArticleWithRela
 
       <ReviewShareBar title={article.title} url={shareUrl} />
 
-      <article className="bg-white">
+      <article className="bg-white overflow-x-hidden">
         {/* Hero Section */}
         <div className="relative bg-gradient-to-br from-yellow-50 via-white to-orange-50 py-16 px-4 sm:px-6 lg:px-8 lg:py-20">
           <div className="mx-auto max-w-6xl">
@@ -369,9 +369,9 @@ export async function ArticlePageContent({ article }: { article: ArticleWithRela
         </div>
 
         {/* Content */}
-        <div className="mx-auto max-w-7xl px-4 pb-16 pt-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 pb-16 pt-20 sm:px-6 lg:px-8 overflow-x-hidden">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-12 min-w-0">
+            <div className="space-y-12 min-w-0 overflow-x-hidden">
               <div
                 className="prose prose-lg prose-blue max-w-none prose-headings:font-bold prose-h2:text-3xl prose-h3:text-2xl prose-p:leading-relaxed prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-xl prose-img:shadow-lg"
                 dangerouslySetInnerHTML={{ __html: enhancedContent }}

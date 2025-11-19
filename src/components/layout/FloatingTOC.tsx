@@ -6,8 +6,8 @@ import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 interface TOCItem {
   id: string;
   label: string;
-  level: number;
-  order: number;
+  level?: number;
+  order?: number;
 }
 
 interface FloatingTOCProps {
@@ -35,7 +35,7 @@ export default function FloatingTOC({ items }: FloatingTOCProps) {
           </summary>
           <div className="px-6 pb-6">
             <nav className="space-y-1 text-sm text-neutral-600">
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <a
                   key={item.id}
                   href={`#${item.id}`}
@@ -50,7 +50,7 @@ export default function FloatingTOC({ items }: FloatingTOCProps) {
                         : 'bg-sky-100 text-xs font-semibold text-sky-600'
                     }`}
                   >
-                    {item.level === 3 ? '•' : item.order}
+                    {item.level === 3 ? '•' : (item.order || index + 1)}
                   </span>
                   <span>{item.label}</span>
                 </a>
@@ -99,7 +99,7 @@ export default function FloatingTOC({ items }: FloatingTOCProps) {
             }`}
           >
             <nav className="px-4 pb-4 pt-2 max-h-96 overflow-y-auto space-y-1">
-              {items.map((item) => (
+              {items.map((item, index) => (
                 <a
                   key={item.id}
                   href={`#${item.id}`}
@@ -115,7 +115,7 @@ export default function FloatingTOC({ items }: FloatingTOCProps) {
                         : 'bg-sky-100 text-xs font-semibold text-sky-600'
                     }`}
                   >
-                    {item.level === 3 ? '•' : item.order}
+                    {item.level === 3 ? '•' : (item.order || index + 1)}
                   </span>
                   <span className="text-neutral-700">{item.label}</span>
                 </a>

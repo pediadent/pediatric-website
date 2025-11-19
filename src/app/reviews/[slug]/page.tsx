@@ -552,7 +552,7 @@ export async function ReviewContent({ review }: { review: ReviewWithRelations })
 
       <ReviewShareBar title={review.title} url={shareUrl} />
 
-      <article className="bg-white">
+      <article className="bg-white overflow-x-hidden">
         <div className="relative bg-gradient-to-br from-yellow-50 via-white to-orange-50 py-16 px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-6xl">
             <nav className="mb-8">
@@ -634,9 +634,9 @@ export async function ReviewContent({ review }: { review: ReviewWithRelations })
           </div>
         )}
 
-        <div className="mx-auto max-w-7xl px-4 pb-16 pt-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 pb-16 pt-20 sm:px-6 lg:px-8 overflow-x-hidden">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="space-y-12">
+            <div className="space-y-12 min-w-0 overflow-x-hidden">
 
               <section className="rounded-2xl border border-neutral-200 bg-neutral-50 p-6 sm:p-8">
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
