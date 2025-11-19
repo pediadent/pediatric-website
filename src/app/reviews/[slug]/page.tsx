@@ -208,11 +208,10 @@ const getReviewerInfo = (review: ReviewWithRelations): { reviewerNames: string[]
   }
 }
 
-const buildJsonLd = async (review: ReviewWithRelations, authorNames: string[]) => {
+const buildJsonLd = async (review: ReviewWithRelations, authorNames: string[], faqs: Array<{ question: string; answer: string }>) => {
   const { generateReviewSchema, generateBreadcrumbSchema, generateFAQSchema } = await import('@/lib/schema-generator')
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://pediatricdentistinqueensny.com') as string
   const shareUrl = `${baseUrl}/${review.slug}/`
-  const faqs = parseFaqEntries(review.faqs)
 
   // Review Schema
   const reviewSchema = review.schema ? JSON.parse(review.schema) : generateReviewSchema({
@@ -227,7 +226,7 @@ const buildJsonLd = async (review: ReviewWithRelations, authorNames: string[]) =
     datePublished: review.publishedAt?.toISOString() || new Date().toISOString(),
     dateModified: review.updatedAt?.toISOString(),
     itemName: review.title,
-    itemImage: review.featuredImage,
+    itemImage: review.featuredImage || undefined,
     rating: review.rating ?? undefined,
     image: review.featuredImage ? {
       url: review.featuredImage,
@@ -347,7 +346,7 @@ export async function ReviewContent({ review }: { review: ReviewWithRelations })
   const cons = parseList(review.cons)
   const affiliateLinks = parseAffiliateLinks(review.affiliateLinks)
   const faqs = parseFaqEntries(review.faqs)
-  const jsonLd = await buildJsonLd(review, authorNames)
+  const jsonLd = await buildJsonLd(review, authorNames, faqs)
 
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? '') as string
   const shareUrl = baseUrl ? `${baseUrl}/${review.slug}/` : undefined
