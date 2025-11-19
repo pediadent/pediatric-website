@@ -8,12 +8,12 @@ import {
   XMarkIcon,
   ArrowTopRightOnSquareIcon,
   ShoppingBagIcon,
-  ShieldCheckIcon,
-  ChevronDownIcon
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { prisma } from '@/lib/prisma'
 import { formatDate, slugify } from '@/lib/utils'
 import FloatingTOC from '@/components/layout/FloatingTOC'
+import { StickyTOC } from '@/components/layout/StickyTOC'
 import { ReviewShareBar } from '@/components/reviews/ReviewShareBar'
 import { getAmazonItems, resolveAmazonLink } from '@/lib/amazon'
 import { DirectorySidebar } from '@/components/directory/DirectorySidebar'
@@ -872,37 +872,7 @@ export async function ReviewContent({ review }: { review: ReviewWithRelations })
             </div>
 
             <aside className="space-y-8">
-              {tocItems.length > 0 && (
-                <div className="lg:sticky lg:top-32">
-                  <details
-                    className="group rounded-3xl border border-neutral-200 bg-white shadow-sm [&_summary::-webkit-details-marker]:hidden"
-                    open={true}
-                  >
-                    <summary className="flex cursor-pointer items-center justify-between px-6 py-4 text-lg font-semibold text-neutral-900">
-                      Table of contents
-                      <span className="ml-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-sky-600 transition-transform duration-200 group-open:rotate-180">
-                        <ChevronDownIcon className="h-4 w-4" />
-                      </span>
-                    </summary>
-                    <div className="px-6 pb-6">
-                      <nav className="space-y-1 text-sm text-neutral-600">
-                        {tocItems.map((item, index) => (
-                          <a
-                            key={item.id}
-                            href={`#${item.id}`}
-                            className="flex items-start gap-3 rounded-xl px-4 py-1.5 text-sm font-medium transition-colors hover:bg-sky-50 hover:text-sky-700"
-                          >
-                            <span className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-sky-100 text-xs font-semibold text-sky-600">
-                              {index + 1}
-                            </span>
-                            <span>{item.label}</span>
-                          </a>
-                        ))}
-                      </nav>
-                    </div>
-                  </details>
-                </div>
-              )}
+              <StickyTOC items={tocItems} />
 
               {quickFacts.length > 0 && (
                 <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">
