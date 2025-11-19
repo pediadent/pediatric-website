@@ -8,7 +8,8 @@ import {
   XMarkIcon,
   ArrowTopRightOnSquareIcon,
   ShoppingBagIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline'
 import { prisma } from '@/lib/prisma'
 import { formatDate, slugify } from '@/lib/utils'
