@@ -42,14 +42,56 @@ export default async function DentistPage({ params }: PageProps) {
   const services = dentist.services ? JSON.parse(dentist.services) : []
   const workingHours = dentist.workingHours ? JSON.parse(dentist.workingHours) : {}
 
+  const { generateMedicalBusinessSchema, generateBreadcrumbSchema } = await import('@/lib/schema-generator')
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://pediatricdentistinqueensny.com'
+  const dentistUrl = `${baseUrl}/dentist/${dentist.slug}/`
+
+  // Parse address for schema
+  const addressParts = dentist.address ? {
+    street: dentist.address.split(',')[0]?.trim() || '',
+    city: 'Queens',
+    state: 'NY',
+    zip: dentist.address.match(/\d{5}/)?.[0] || '',
+    country: 'US'
+  } : undefined
+
+  // Medical Business Schema
+  const businessSchema = dentist.schema ? JSON.parse(dentist.schema) : generateMedicalBusinessSchema({
+    name: dentist.name,
+    description: dentist.description || `${dentist.name} - Pediatric Dentist in Queens, NY`,
+    url: dentistUrl,
+    address: addressParts,
+    phone: dentist.phone || undefined,
+    email: dentist.email || undefined,
+    image: dentist.image || dentist.logo || undefined,
+    rating: dentist.rating ? {
+      value: dentist.rating,
+      count: 1
+    } : undefined,
+    priceRange: dentist.priceRange || undefined,
+    openingHours: workingHours ? Object.entries(workingHours).map(([day, hours]: [string, any]) =>
+      `${day}:${hours.open || ''}-${hours.close || ''}`
+    ) : undefined
+  })
+
+  // Breadcrumb Schema
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: baseUrl },
+    { name: 'Dentist Directory', url: `${baseUrl}/` },
+    { name: dentist.name, url: dentistUrl }
+  ])
+
+  const schemas = [businessSchema, breadcrumbSchema]
+
   return (
     <>
-      {dentist.schema && (
+      {schemas.map((schema, index) => (
         <script
+          key={index}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: dentist.schema }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
-      )}
+      ))}
 
       <div className="min-h-screen bg-white">
         <div className="max-w-4xl mx-auto px-4 py-16">

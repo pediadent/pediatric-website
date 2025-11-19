@@ -7,12 +7,12 @@ import {
   CheckIcon,
   XMarkIcon,
   ArrowTopRightOnSquareIcon,
-  ChevronDownIcon,
   ShoppingBagIcon,
   ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import { prisma } from '@/lib/prisma'
 import { formatDate, slugify } from '@/lib/utils'
+import FloatingTOC from '@/components/layout/FloatingTOC'
 import { ReviewShareBar } from '@/components/reviews/ReviewShareBar'
 import { getAmazonItems, resolveAmazonLink } from '@/lib/amazon'
 import { DirectorySidebar } from '@/components/directory/DirectorySidebar'
@@ -208,31 +208,49 @@ const getReviewerInfo = (review: ReviewWithRelations): { reviewerNames: string[]
   }
 }
 
-const buildJsonLd = (review: ReviewWithRelations, authorNames: string[]) => {
-  if (review.schema) {
-    try {
-      return JSON.parse(review.schema)
-    } catch (error) {
-      console.warn('Failed to parse stored schema', error)
-    }
-  }
+const buildJsonLd = async (review: ReviewWithRelations, authorNames: string[]) => {
+  const { generateReviewSchema, generateBreadcrumbSchema, generateFAQSchema } = await import('@/lib/schema-generator')
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://pediatricdentistinqueensny.com') as string
+  const shareUrl = `${baseUrl}/${review.slug}/`
+  const faqs = parseFaqEntries(review.faqs)
 
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'Review',
-    itemReviewed: {
-      '@type': 'Product',
-      name: review.title
+  // Review Schema
+  const reviewSchema = review.schema ? JSON.parse(review.schema) : generateReviewSchema({
+    title: review.title,
+    description: review.excerpt || review.title,
+    url: shareUrl,
+    author: {
+      name: review.primaryReviewer?.name || authorNames[0] || 'Editorial Team',
+      url: review.primaryReviewer?.slug ? `${baseUrl}/reviewers/${review.primaryReviewer.slug}/` : undefined,
+      image: review.primaryReviewer?.avatar || undefined
     },
-    reviewRating: {
-      '@type': 'Rating',
-      ratingValue: review.rating ?? 5,
-      bestRating: 5
-    },
-    author: authorNames.length === 1 ? authorNames[0] : authorNames.map((name) => ({ '@type': 'Person', name })),
-    reviewBody: review.excerpt || review.title,
-    datePublished: review.publishedAt?.toISOString()
-  }
+    datePublished: review.publishedAt?.toISOString() || new Date().toISOString(),
+    dateModified: review.updatedAt?.toISOString(),
+    itemName: review.title,
+    itemImage: review.featuredImage,
+    rating: review.rating ?? undefined,
+    image: review.featuredImage ? {
+      url: review.featuredImage,
+      caption: review.title
+    } : undefined
+  })
+
+  // Breadcrumb Schema
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: baseUrl },
+    { name: 'Reviews', url: `${baseUrl}/reviews/` },
+    { name: review.title, url: shareUrl }
+  ])
+
+  // FAQ Schema (if FAQs exist)
+  const faqSchema = faqs.length > 0 ? generateFAQSchema(
+    faqs.map(faq => ({
+      question: faq.question,
+      answer: faq.answer
+    }))
+  ) : null
+
+  return [reviewSchema, breadcrumbSchema, faqSchema].filter(Boolean)
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -329,7 +347,7 @@ export async function ReviewContent({ review }: { review: ReviewWithRelations })
   const cons = parseList(review.cons)
   const affiliateLinks = parseAffiliateLinks(review.affiliateLinks)
   const faqs = parseFaqEntries(review.faqs)
-  const jsonLd = buildJsonLd(review, authorNames)
+  const jsonLd = await buildJsonLd(review, authorNames)
 
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ?? '') as string
   const shareUrl = baseUrl ? `${baseUrl}/${review.slug}/` : undefined
@@ -525,10 +543,13 @@ export async function ReviewContent({ review }: { review: ReviewWithRelations })
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {jsonLd.map((schema, index) => (
+        <script
+          key={index}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
 
       <ReviewShareBar title={review.title} url={shareUrl} />
 
@@ -851,37 +872,7 @@ export async function ReviewContent({ review }: { review: ReviewWithRelations })
             </div>
 
             <aside className="space-y-8">
-              {tocItems.length > 0 && (
-                <div className="lg:sticky lg:top-32">
-                  <details
-                    className="group rounded-3xl border border-neutral-200 bg-white shadow-sm [&_summary::-webkit-details-marker]:hidden"
-                    open={true}
-                  >
-                    <summary className="flex cursor-pointer items-center justify-between px-6 py-4 text-lg font-semibold text-neutral-900">
-                      Table of contents
-                      <span className="ml-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-sky-600 transition-transform duration-200 group-open:rotate-180">
-                        <ChevronDownIcon className="h-4 w-4" />
-                      </span>
-                    </summary>
-                    <div className="px-6 pb-6">
-                      <nav className="space-y-1 text-sm text-neutral-600">
-                        {tocItems.map((item, index) => (
-                          <a
-                            key={item.id}
-                            href={`#${item.id}`}
-                        className="flex items-start gap-3 rounded-xl px-4 py-1.5 text-sm font-medium transition-colors hover:bg-sky-50 hover:text-sky-700"
-                          >
-                            <span className="mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full bg-sky-100 text-xs font-semibold text-sky-600">
-                              {index + 1}
-                            </span>
-                            <span>{item.label}</span>
-                          </a>
-                        ))}
-                      </nav>
-                    </div>
-                  </details>
-                </div>
-              )}
+              <FloatingTOC items={tocItems} />
 
               {quickFacts.length > 0 && (
                 <div className="rounded-3xl border border-neutral-200 bg-white p-6 shadow-sm">

@@ -4,9 +4,10 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { formatDate, slugify } from '@/lib/utils'
 import { Metadata } from 'next'
-import { ChevronDownIcon, ClockIcon } from '@heroicons/react/24/outline'
+import { ClockIcon } from '@heroicons/react/24/outline'
 import { ReviewShareBar } from '@/components/reviews/ReviewShareBar'
 import { DirectorySidebar } from '@/components/directory/DirectorySidebar'
+import FloatingTOC from '@/components/layout/FloatingTOC'
 
 export interface PageProps {
   params: Promise<{
@@ -217,28 +218,44 @@ export async function ArticlePageContent({ article }: { article: ArticleWithRela
     'https://pediatricdentistinqueensny.com'
   const shareUrl = `${siteBaseUrl}/${article.slug}/`
 
-  const jsonLd = article.schema ? JSON.parse(article.schema) : {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
-    headline: article.title,
+  // Import schema generators at the top of the file
+  const { generateBlogPostSchema, generateBreadcrumbSchema, generateFAQSchema } = await import('@/lib/schema-generator')
+
+  // Article Schema
+  const articleSchema = article.schema ? JSON.parse(article.schema) : generateBlogPostSchema({
+    title: article.title,
     description: article.excerpt || article.title,
+    url: shareUrl,
     author: {
-      '@type': 'Person',
-      name: article.author.name
+      name: article.author.name,
+      url: `${siteBaseUrl}/authors/${article.author.slug}/`,
+      image: article.author.avatar || undefined
     },
-    publisher: {
-      '@type': 'Organization',
-      name: 'Pediatric Dentist in Queens NY'
-    },
-    datePublished: article.publishedAt?.toISOString(),
+    datePublished: article.publishedAt?.toISOString() || new Date().toISOString(),
     dateModified: article.updatedAt.toISOString(),
-    image: article.featuredImage
-      ? article.featuredImage.startsWith('http')
-        ? article.featuredImage
-        : `${siteBaseUrl}${article.featuredImage}`
-      : undefined,
-    url: shareUrl
-  }
+    image: article.featuredImage ? {
+      url: article.featuredImage.startsWith('http') ? article.featuredImage : `${siteBaseUrl}${article.featuredImage}`,
+      caption: article.title
+    } : undefined
+  })
+
+  // Breadcrumb Schema
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: siteBaseUrl },
+    { name: article.category.name, url: `${siteBaseUrl}/${article.category.slug}/` },
+    { name: article.title, url: shareUrl }
+  ])
+
+  // FAQ Schema (if FAQs exist)
+  const faqSchema = faqs.length > 0 ? generateFAQSchema(
+    faqs.map(faq => ({
+      question: faq.question,
+      answer: faq.answer
+    }))
+  ) : null
+
+  // Combine all schemas
+  const jsonLd = [articleSchema, breadcrumbSchema, faqSchema].filter(Boolean)
 
   const displayTocItems =
     tocItems.length > 0 && tocItems.some((item) => item.level === 2)
@@ -253,10 +270,13 @@ export async function ArticlePageContent({ article }: { article: ArticleWithRela
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      {jsonLd.map((schema, index) => (
+        <script
+          key={index}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
 
       <ReviewShareBar title={article.title} url={shareUrl} />
 
@@ -464,45 +484,7 @@ export async function ArticlePageContent({ article }: { article: ArticleWithRela
             </div>
 
             <aside className="space-y-8">
-              {displayTocItems.length > 0 && (
-                <div className="lg:sticky lg:top-32">
-                  <details
-                    className="group rounded-3xl border border-neutral-200 bg-white shadow-sm [&_summary::-webkit-details-marker]:hidden"
-                    open={true}
-                  >
-                    <summary className="flex cursor-pointer items-center justify-between px-6 py-4 text-lg font-semibold text-neutral-900">
-                      Table of contents
-                      <span className="ml-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-sky-100 text-sky-600 transition-transform duration-200 group-open:rotate-180">
-                        <ChevronDownIcon className="h-4 w-4" />
-                      </span>
-                    </summary>
-                    <div className="px-6 pb-6">
-                      <nav className="space-y-1 text-sm text-neutral-600">
-                        {displayTocItems.map((item) => (
-                          <a
-                            key={item.id}
-                            href={`#${item.id}`}
-                            className={`flex items-start gap-3 rounded-xl py-1.5 text-sm font-medium transition-colors hover:bg-sky-50 hover:text-sky-700 ${
-                              item.level === 3 ? 'pl-8' : 'px-4'
-                            }`}
-                          >
-                            <span
-                              className={`mt-0.5 inline-flex h-6 w-6 flex-none items-center justify-center rounded-full ${
-                                item.level === 3
-                                  ? 'bg-transparent text-sky-500 text-base leading-none'
-                                  : 'bg-sky-100 text-xs font-semibold text-sky-600'
-                              }`}
-                            >
-                              {item.level === 3 ? '•' : item.order}
-                            </span>
-                            <span>{item.label}</span>
-                          </a>
-                        ))}
-                      </nav>
-                    </div>
-                  </details>
-                </div>
-              )}
+              <FloatingTOC items={displayTocItems} />
 
               <DirectorySidebar
                 categoryName={article.category.name}

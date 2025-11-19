@@ -12,7 +12,11 @@ export interface ArticleSchemaInput {
   title: string
   description?: string | null
   slug: string
-  authorName?: string | null
+  author?: {
+    name: string
+    slug?: string
+    avatar?: string | null
+  } | null
   publishedAt: Date
   updatedAt: Date
   featuredImage?: string | null
@@ -26,10 +30,17 @@ export function buildArticleSchema(input: ArticleSchemaInput): string {
     title: input.title,
     description: input.description || '',
     url: articleUrl,
-    author: input.authorName || 'Editorial Team',
+    author: {
+      name: input.author?.name || 'Editorial Team',
+      url: input.author?.slug ? `${baseUrl}/authors/${input.author.slug}/` : undefined,
+      image: input.author?.avatar || undefined
+    },
     datePublished: input.publishedAt.toISOString(),
     dateModified: input.updatedAt.toISOString(),
-    image: input.featuredImage || undefined
+    image: input.featuredImage ? {
+      url: input.featuredImage,
+      caption: input.title
+    } : undefined
   })
 
   return JSON.stringify(schemaObject)
